@@ -1,9 +1,13 @@
-class Figure:
+from abc import ABC, abstractmethod
+
+
+class Figure(ABC):
 
     def __init__(self, side, position, board):
         self.side = side  # w,b
         self.__position = position  # Num in pseudo-octal system, where 'decade' is index in y and 'units' is index in x
         self.board = board
+        self.pp = []  # pp - potential position
 
     @property
     def position(self):
@@ -17,8 +21,8 @@ class Figure:
     def position_check(self, po):
         return po >= 0 and po // 10 <= 7 and po % 10 <= 7 and po not in self.board.figures_data
 
+    @abstractmethod
     def potential_position(self):
-        self.pp = [] # pp - potential position
         l = len(self.move_pattern)
 
         if l == 1 or l == 3:
@@ -72,18 +76,34 @@ class Figure:
                             break
         del l
 
+    @abstractmethod
+    def __str__(self):
+        pass
+
 
 class Night(Figure):
-
-    move_pattern = (2,1)
 
     @staticmethod
     def position_check(po):
         return po >= 0 and po // 10 <= 7 and po % 10 <= 7
 
     def potential_position(self):
-        super().potential_position()
         # можно переписать удобнее
+        for i in (-10, 10):
+            for j in (-1, 1):
+                for s in range(1, 2):
+                    po = self.position + s * i + s * j
+                    if self.position_check(po):
+                        self.pp.append(po)
+                    elif po in self.board.figures_data:
+                        if self.side != self.board.figures_data[po].side:
+                            self.pp.append(po)
+                            break
+                        else:
+                            self.board.attacked_field_data[self.side].update([po])
+                            break
+                    else:
+                        break
         self.pp = list(map(lambda x: x%10 - self.position%10 + x, self.pp)) + list(map(lambda x: (x//10-self.position//10)*10 + x, self.pp))
         t = self.pp * 1
         for i in t:
@@ -98,7 +118,53 @@ class Night(Figure):
 
 class Queen(Figure):
 
-    move_pattern = (8,8,8)
+    def potential_position(self):
+        for i in (-10, 10):
+            for s in range(1, 8):
+                po = self.position + s * i
+                if self.position_check(po):  # and po % 10 == self.position % 10:
+                    self.pp.append(po)
+                elif po in self.board.figures_data:
+                    if self.side != self.board.figures_data[po].side:
+                        self.pp.append(po)
+                        break
+                    else:
+                        self.board.attacked_field_data[self.side].update([po])
+                        break
+                else:
+                    break
+
+        for j in (-1, 1):
+            for s in range(1, 8):
+                po = self.position + s * j
+                if self.position_check(po):  # and po // 10 == self.position // 10:
+                    self.pp.append(po)
+                elif po in self.board.figures_data:
+                    if self.side != self.board.figures_data[po].side:
+                        self.pp.append(po)
+                        break
+                    else:
+                        self.board.attacked_field_data[self.side].update([po])
+                        break
+                else:
+                    break
+
+        for i in (-10, 10):
+            for j in (-1, 1):
+                for s in range(1, 8):
+                    po = self.position + s * i + s * j
+                    if self.position_check(po):
+                        self.pp.append(po)
+                    elif po in self.board.figures_data:
+                        if self.side != self.board.figures_data[po].side:
+                            self.pp.append(po)
+                            break
+                        else:
+                            self.board.attacked_field_data[self.side].update([po])
+                            break
+                    else:
+                        break
+
 
     def __str__(self):
         return 'Q'
@@ -106,7 +172,22 @@ class Queen(Figure):
 
 class Bishop(Figure):
 
-    move_pattern = (8,8)
+    def potential_position(self):
+        for i in (-10, 10):
+            for j in (-1, 1):
+                for s in range(1, 8):
+                    po = self.position + s * i + s * j
+                    if self.position_check(po):
+                        self.pp.append(po)
+                    elif po in self.board.figures_data:
+                        if self.side != self.board.figures_data[po].side:
+                            self.pp.append(po)
+                            break
+                        else:
+                            self.board.attacked_field_data[self.side].update([po])
+                            break
+                    else:
+                        break
 
     def __str__(self):
         return 'B'
@@ -128,7 +209,52 @@ class SpecialMoveFigure(Figure):
 
 class King(SpecialMoveFigure):
 
-    move_pattern = (2,1,1)#why not(1,1,1) because code features
+    def potential_position(self):
+        for i in (-10, 10):
+            for s in range(1, 2):
+                po = self.position + s * i
+                if self.position_check(po):# and po % 10 == self.position % 10:
+                    self.pp.append(po)
+                elif po in self.board.figures_data:
+                    if self.side != self.board.figures_data[po].side:
+                        self.pp.append(po)
+                        break
+                    else:
+                        self.board.attacked_field_data[self.side].update([po])
+                        break
+                else:
+                    break
+
+        for j in (-1, 1):
+            for s in range(1, 2):
+                po = self.position + s * j
+                if self.position_check(po):# and po // 10 == self.position // 10:
+                    self.pp.append(po)
+                elif po in self.board.figures_data:
+                    if self.side != self.board.figures_data[po].side:
+                        self.pp.append(po)
+                        break
+                    else:
+                        self.board.attacked_field_data[self.side].update([po])
+                        break
+                else:
+                    break
+
+        for i in (-10, 10):
+            for j in (-1, 1):
+                for s in range(1, 2):
+                    po = self.position + s * i + s * j
+                    if self.position_check(po):
+                        self.pp.append(po)
+                    elif po in self.board.figures_data:
+                        if self.side != self.board.figures_data[po].side:
+                            self.pp.append(po)
+                            break
+                        else:
+                            self.board.attacked_field_data[self.side].update([po])
+                            break
+                    else:
+                        break
 
     def __str__(self):
         return 'K'
@@ -136,7 +262,36 @@ class King(SpecialMoveFigure):
 
 class Rook(SpecialMoveFigure):
 
-    move_pattern = (8,)
+    def potential_position(self):
+        for i in (-10, 10):
+            for s in range(1, 8):
+                po = self.position + s * i
+                if self.position_check(po):# and po % 10 == self.position % 10:
+                    self.pp.append(po)
+                elif po in self.board.figures_data:
+                    if self.side != self.board.figures_data[po].side:
+                        self.pp.append(po)
+                        break
+                    else:
+                        self.board.attacked_field_data[self.side].update([po])
+                        break
+                else:
+                    break
+
+        for j in (-1, 1):
+            for s in range(1, 8):
+                po = self.position + s * j
+                if self.position_check(po):# and po // 10 == self.position // 10:
+                    self.pp.append(po)
+                elif po in self.board.figures_data:
+                    if self.side != self.board.figures_data[po].side:
+                        self.pp.append(po)
+                        break
+                    else:
+                        self.board.attacked_field_data[self.side].update([po])
+                        break
+                else:
+                    break
 
     def __str__(self):
         return 'R'
@@ -202,7 +357,52 @@ class Pawn(SpecialMoveFigure):
 
 class Dummy(Figure):
 
-    move_pattern = (1,1,1)
+    def potential_position(self):
+        for i in (-10, 10):
+            for s in range(1, 1):
+                po = self.position + s * i
+                if self.position_check(po):# and po % 10 == self.position % 10:
+                    self.pp.append(po)
+                elif po in self.board.figures_data:
+                    if self.side != self.board.figures_data[po].side:
+                        self.pp.append(po)
+                        break
+                    else:
+                        self.board.attacked_field_data[self.side].update([po])
+                        break
+                else:
+                    break
+
+        for j in (-1, 1):
+            for s in range(1, 1):
+                po = self.position + s * j
+                if self.position_check(po):# and po // 10 == self.position // 10:
+                    self.pp.append(po)
+                elif po in self.board.figures_data:
+                    if self.side != self.board.figures_data[po].side:
+                        self.pp.append(po)
+                        break
+                    else:
+                        self.board.attacked_field_data[self.side].update([po])
+                        break
+                else:
+                    break
+
+        for i in (-10, 10):
+            for j in (-1, 1):
+                for s in range(1, 1):
+                    po = self.position + s * i + s * j
+                    if self.position_check(po):
+                        self.pp.append(po)
+                    elif po in self.board.figures_data:
+                        if self.side != self.board.figures_data[po].side:
+                            self.pp.append(po)
+                            break
+                        else:
+                            self.board.attacked_field_data[self.side].update([po])
+                            break
+                    else:
+                        break
 
     def __str__(self):
         return 'D'
