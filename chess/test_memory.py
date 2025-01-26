@@ -1,4 +1,4 @@
-from chess.Board import Board as board
+from chess.board import Board as board
 from guppy import hpy
 
 h = hpy()

@@ -27,6 +27,8 @@ class Figure(ABC):
 
         if l == 1 or l == 3:
 
+
+
             for i in (-10, 10):
                 for s in range(1, self.move_pattern[0]):
                     po = self.position + s * i

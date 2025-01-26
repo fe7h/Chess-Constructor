@@ -1,4 +1,4 @@
-from chess.Board import Board
+from chess.board import Board
 from chess.tech_commands import afd, fd, fd_key
 from chess.console_view import board_view, algebraic_convert
 

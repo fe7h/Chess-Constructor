@@ -1,5 +1,5 @@
-from chess.Figures import *
-from chess.Board import Board
+from chess.figures import *
+from chess.board import Board
 
 a = [i for i in range(8)]
 a.reverse()

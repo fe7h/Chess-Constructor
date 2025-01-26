@@ -1,4 +1,4 @@
-from chess.Figures import *
+from chess.figures import *
 
 
 class Board:
