@@ -6,7 +6,7 @@ class Board:
     __slots__ = ('figures_data', 'attacked_field_data')
 
     def __init__(self):
-        self.figures_data = {}
+        self.figures_data = {} # это словарь!
         self.attacked_field_data = {'w': set(), 'b': set()}
 
     def all_possible_moves(self):#переминовать в all_attacked_field

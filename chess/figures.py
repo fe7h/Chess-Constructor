@@ -5,7 +5,7 @@ class Figure(ABC):
 
     def __init__(self, side, position, board):
         self.side = side  # w,b
-        self.__position = position  # Num in pseudo-octal system, where 'decade' is index in y and 'units' is index in x
+        self.__position = position  # Num in pseudo-octal system, where 'decade' is index in y and 'units' is index in x (0-7)
         self.board = board
         self.pp = []  # pp - potential position
 
