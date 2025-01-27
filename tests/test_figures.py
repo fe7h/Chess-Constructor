@@ -40,7 +40,7 @@ def test_bishop(board_data):
 def test_king(board_data):
     king = figures.King('w', 55, board_data)
     board_data.figures_data[55] = king
-    king.potential_position()
+    board_data.all_possible_moves()
     assert sorted(king.pp)  == sorted([45, 46, 54, 56, 64, 65, 66])
 
 def test_rook(board_data):
@@ -55,11 +55,11 @@ def test_rook(board_data):
 #     pawn.potential_position()
 #     assert sorted(pawn.pp)  == sorted([])
 
-# def test_dummy(board_data):
-#     dummy = figures.Dummy('w', 55, board_data)
-#     board_data.figures_data.add(dummy)
-#     dummy.potential_position()
-#     assert dummy.pp  == []
+def test_dummy(board_data):
+    dummy = figures.Dummy('w', 55, board_data)
+    board_data.figures_data[55] = dummy
+    dummy.potential_position()
+    assert sorted(dummy.pp)  == sorted([45, 46, 54, 56, 64, 65, 66])
 
 # for key in module_figures_dict:
 #     if 'chess.figures.' in str(module_figures_dict[key]):
