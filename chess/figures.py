@@ -137,14 +137,18 @@ class Bishop(Figure):
 
 class King(Figure):
 
-    def position_check(self, position):
-        return super().position_check(position) and not all(
-            position in self.board.attacked_field_data[side]
-            for side in self.board.attacked_field_data if side != self.side)
+    # def position_check(self, position):
+    #     return super().position_check(position) and not all(
+    #         position in self.board.attacked_field_data[side]
+    #         for side in self.board.attacked_field_data if side != self.side)
 
     def potential_position(self):
         file, rank = self.temp_func_for_new_position_field_get()
         self.one_square_movement(file, rank)
+
+    def temp_func_for_take_attacked_field_data(self):
+        side = 'b' if self.side == 'w' else 'w'
+        self.pp = list(set(self.pp) - self.board.attacked_field_data[side])
 
     def __str__(self):
         return 'K'

@@ -42,6 +42,9 @@ def test_king(board_data):
     board_data.figures_data[55] = king
     board_data.all_possible_moves()
     assert sorted(king.pp)  == sorted([45, 46, 54, 56, 64, 65, 66])
+    king.temp_func_for_take_attacked_field_data()
+    assert sorted(king.pp)  == sorted([45, 46, 54])
+
 
 def test_rook(board_data):
     rook = figures.Rook('w', 55, board_data)
