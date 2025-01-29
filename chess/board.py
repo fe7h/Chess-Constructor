@@ -1,6 +1,25 @@
 from chess.figures import *
 
 
+class AttackedSquares:
+    def __init__(self, colors):
+        self.__under_attack = {color: set() for color in colors}
+
+    def update(self, figure: Figure):
+        figure_color = figure.side
+        for color in self.__under_attack:
+            if color != figure_color:
+                self.__under_attack[color].update(figure.pp)
+
+    def clear(self):
+        for color in self.__under_attack:
+            self.__under_attack[color].clear()
+
+    def get_attacked_squares(self, color: str | Figure):
+        if isinstance(color, Figure):
+            color = color.side
+        return self.__under_attack.get(color)
+
 class Board:
 
     __slots__ = ('figures_data', 'attacked_field_data')
