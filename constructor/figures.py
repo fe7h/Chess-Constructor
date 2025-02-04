@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import namedtuple
 
 
 # settings
@@ -7,25 +8,29 @@ FILE_SIZE = 8
 RANK_SIZE = 8
 # ========
 
-class Coord:
-    def __init__(self, file: int, rank: int, **kwargs):
-        self.file = file
-        self.rank = rank
-        for name, value in kwargs.items():
-            setattr(self, name, value)
+Coord = namedtuple('Coord', COORD_PATTERN)
 
-    def get(self):
-        return tuple(value for name, value in self.__dict__.items())
-
-    def set(self, new_value: tuple):
-        attributes = self.__dict__.keys()
-        self.__dict__ = dict(zip(attributes, new_value))
-
-    def __eq__(self, other: tuple):
-        return self.get() == other
+# class Coord:
+#     def __init__(self, file: int, rank: int, **kwargs):
+#         self.file = file
+#         self.rank = rank
+#         for name, value in kwargs.items():
+#             setattr(self, name, value)
+#
+#     def get(self):
+#         return tuple(value for name, value in self.__dict__.items())
+#
+#     def set(self, new_value: tuple):
+#         attributes = self.__dict__.keys()
+#         self.__dict__ = dict(zip(attributes, new_value))
+#
+#     def __eq__(self, other: tuple):
+#         return self.get() == other
 
 
 class Figure(ABC):
+
+    moves = namedtuple('moves', {'normal', 'capturing', 'protected'})
 
     def __init__(self, color: str, position: Coord):
         self.color = color
@@ -33,9 +38,10 @@ class Figure(ABC):
         self.special_move = True
         # self.file, self.rank = self.temp_func_for_new_position_field_get()
         # self.board = board
-        self.valid_moves = set()  # pp - potential position
-        self.protected_squares = set()
-        self.attacked_squares = set()
+        # self.valid_moves = set()  # pp - potential position
+        # self.protected_squares = set()
+        # self.attacked_squares = set()
+        self.valid_moves = self.moves(set(), set(), set())
 
     @abstractmethod
     def __str__(self):
@@ -49,31 +55,31 @@ class Figure(ABC):
 
     @property
     def position(self):
-        return self.current_position.get()
+        return self.current_position
 
     @position.setter
-    def position(self, new_position: tuple):
+    def position(self, new_position: Coord):
         if new_position in self.valid_moves:
             self.special_move = False
-            self.current_position.set(new_position)
+            self.current_position = new_position
 
     @abstractmethod
     def move_mechanic(self, board, *args, **kwargs):
         pass
 
-    # def potential_position(self, *args, **kwargs):
-    #     self.pp.clear()
-    #     self.position_calculated(*args, **kwargs)
     def moves_calculated(self, board, *args, **kwargs):
         self.valid_moves.clear()
         self.move_mechanic(board, *args, **kwargs)
 
-# ==========================================================================
-    def position_check(self, position):
-        return position >= 0 and position // 10 <= 7 and position % 10 <= 7 and position not in self.board.figures_data
+    @staticmethod
+    def position_check(position: Coord):
+        return all(
+            0 < getattr(position, atr) <= globals().get(atr.upper() + '_SIZE')
+            for atr in COORD_PATTERN
+        )
 
     # def potential_position_add(self, position):
-    def valid_move_add(self, board, file, rank) -> bool | None:
+    def valid_move_add(self, board, position: Coord) -> bool | None:
         """
         :param position:
         :return:
@@ -82,16 +88,16 @@ class Figure(ABC):
             None: if position out of board size
         """
 
-        if self.position_check(position):
-            self.valid_moves.add(position)
-            return True
-        elif position in board.figures_data:
+        if position in board.figures_data:
             if self.color != board.figures_data.get(position).color:
                 self.valid_moves.add(position)
                 self.attacked_squares.add(position)
             else:
                 self.protected_squares.add(position)
             return False
+        elif self.position_check(position):
+            self.valid_moves.add(position)
+            return True
         return None
 
 # ===================================classic================================
