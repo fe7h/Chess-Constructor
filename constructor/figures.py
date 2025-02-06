@@ -27,10 +27,21 @@ Coord = namedtuple('Coord', COORD_PATTERN)
 #     def __eq__(self, other: tuple):
 #         return self.get() == other
 
+class MovesSet:
+    def __init__(self):
+        self.normal = set() #valid_moves
+        self.capturing = set() #attacked_squares
+        self.protected = set() #protected_squares
+
+    def clear(self):
+        self.normal.clear()
+        self.capturing.clear()
+        self.protected.clear()
+
 
 class Figure(ABC):
 
-    moves = namedtuple('moves', {'normal', 'capturing', 'protected'})
+    # moves = namedtuple('moves', {'normal', 'capturing', 'protected'})
 
     def __init__(self, color: str, position: Coord):
         self.color = color
@@ -41,7 +52,7 @@ class Figure(ABC):
         # self.valid_moves = set()  # pp - potential position
         # self.protected_squares = set()
         # self.attacked_squares = set()
-        self.valid_moves = self.moves(set(), set(), set())
+        self.valid_moves = MovesSet()
 
     @abstractmethod
     def __str__(self):
@@ -90,13 +101,13 @@ class Figure(ABC):
 
         if position in board.figures_data:
             if self.color != board.figures_data.get(position).color:
-                self.valid_moves.add(position)
-                self.attacked_squares.add(position)
+                self.valid_moves.normal.add(position)
+                self.valid_moves.capturing.add(position)
             else:
-                self.protected_squares.add(position)
+                self.valid_moves.protected.add(position)
             return False
         elif self.position_check(position):
-            self.valid_moves.add(position)
+            self.valid_moves.normal.add(position)
             return True
         return None
 
