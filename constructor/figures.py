@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
-
+from typing import Set
 
 # settings
 COORD_PATTERN = {'file', 'rank'}
@@ -10,59 +10,33 @@ RANK_SIZE = 8
 
 Coord = namedtuple('Coord', COORD_PATTERN)
 
-# class Coord:
-#     def __init__(self, file: int, rank: int, **kwargs):
-#         self.file = file
-#         self.rank = rank
-#         for name, value in kwargs.items():
-#             setattr(self, name, value)
-#
-#     def get(self):
-#         return tuple(value for name, value in self.__dict__.items())
-#
-#     def set(self, new_value: tuple):
-#         attributes = self.__dict__.keys()
-#         self.__dict__ = dict(zip(attributes, new_value))
-#
-#     def __eq__(self, other: tuple):
-#         return self.get() == other
 
+#ТОЧНО ПЕРЕПИСАТЬ!
 class MovesSet:
     def __init__(self):
-        self.normal = set() #valid_moves
-        self.capturing = set() #attacked_squares
-        self.protected = set() #protected_squares
+        self.normal: Set[Coord] = set()
+        self.capturing: Set[Coord] = set()
+        self.protected: Set[Coord] = set()
 
     def clear(self):
         self.normal.clear()
         self.capturing.clear()
         self.protected.clear()
 
+    def get(self):
+        return self.normal | self.capturing | self.protected
+
 
 class Figure(ABC):
-
-    # moves = namedtuple('moves', {'normal', 'capturing', 'protected'})
-
     def __init__(self, color: str, position: Coord):
         self.color = color
         self.current_position = position
         self.special_move = True
-        # self.file, self.rank = self.temp_func_for_new_position_field_get()
-        # self.board = board
-        # self.valid_moves = set()  # pp - potential position
-        # self.protected_squares = set()
-        # self.attacked_squares = set()
         self.valid_moves = MovesSet()
 
     @abstractmethod
     def __str__(self):
         pass
-    # def temp_func_for_new_position_field_get(self):
-    #     return self.__position // 10, self.__position % 10
-    #
-    # @staticmethod
-    # def temp_func_for_old_coord_format_set(file, rank):
-    #     return file * 10 + rank
 
     @property
     def position(self):
@@ -70,7 +44,7 @@ class Figure(ABC):
 
     @position.setter
     def position(self, new_position: Coord):
-        if new_position in self.valid_moves:
+        if new_position in self.valid_moves.get():
             self.special_move = False
             self.current_position = new_position
 
@@ -98,60 +72,83 @@ class Figure(ABC):
             False: if position points to occupied square
             None: if position out of board size
         """
-
         if position in board.figures_data:
+            if board.check_validation(self, position):
+                return False
             if self.color != board.figures_data.get(position).color:
                 self.valid_moves.normal.add(position)
                 self.valid_moves.capturing.add(position)
             else:
-                self.valid_moves.protected.add(position)
+                self.valid_moves.protected.add(position) #не попадает если свзаная фигура ИСПРАВИТЬ!
             return False
         elif self.position_check(position):
+            if board.check_validation(self, position):
+                return True
             self.valid_moves.normal.add(position)
             return True
         return None
 
+        # if not self.position_check(position):
+        #     return None
+        # if board.check_validation(self, position):
+        #     if position in board.figures_data:
+        #         if self.color != board.figures_data.get(position).color:
+        #             self.valid_moves.normal.add(position)
+        #             self.valid_moves.capturing.add(position)
+        #         else:
+        #             self.valid_moves.protected.add(position)
+        #         return False
+        #     elif self.position_check(position):
+        #         self.valid_moves.normal.add(position)
+        #         return True
+        # return True #but pos dont add
+
+        # if position in board.figures_data:
+        #     if self.color != board.figures_data.get(position).color:
+        #         self.valid_moves.normal.add(position)
+        #         self.valid_moves.capturing.add(position)
+        #     else:
+        #         self.valid_moves.protected.add(position)
+        #     return False
+        # elif self.position_check(position):
+        #     self.valid_moves.normal.add(position)
+        #     return True
+        # return None
+
 # ===================================classic================================
-    def linear_movement(self, file, rank):
-        for modifier in (-1, 1):
-            for coord in range(1, FILE_SIZE):
-                file_coord = file + coord * modifier
-                if not self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank)):
-                    break
-            for coord in range(1, RANK_SIZE):
-                rank_coord = rank + coord * modifier
-                if not self.potential_position_add(self.temp_func_for_old_coord_format_set(file, rank_coord)):
-                    break
-
-    def diagonal_movement(self, file, rank):
-        for modifier_1 in (-1, 1):
-            for modifier_2 in (-1, 1):
-                for coord in range(1, 8):
-                    file_coord = file + coord * modifier_1
-                    rank_coord = rank + coord * modifier_2
-                    if not self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank_coord)):
-                        break
-
-    def one_square_movement(self, file, rank):
-        for modifier_1 in (-1, 1):
-            for modifier_2 in (-1, 1):
-                file_coord = file + modifier_1
-                rank_coord = rank + modifier_2
-                self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank_coord))
-        for coord in (-1, 1):
-            file_coord = file + coord
-            self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank))
-            rank_coord = rank + coord
-            self.potential_position_add(self.temp_func_for_old_coord_format_set(file, rank_coord))
+#     def linear_movement(self, file, rank):
+#         for modifier in (-1, 1):
+#             for coord in range(1, FILE_SIZE):
+#                 file_coord = file + coord * modifier
+#                 if not self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank)):
+#                     break
+#             for coord in range(1, RANK_SIZE):
+#                 rank_coord = rank + coord * modifier
+#                 if not self.potential_position_add(self.temp_func_for_old_coord_format_set(file, rank_coord)):
+#                     break
+#
+#     def diagonal_movement(self, file, rank):
+#         for modifier_1 in (-1, 1):
+#             for modifier_2 in (-1, 1):
+#                 for coord in range(1, 8):
+#                     file_coord = file + coord * modifier_1
+#                     rank_coord = rank + coord * modifier_2
+#                     if not self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank_coord)):
+#                         break
+#
+#     def one_square_movement(self, file, rank):
+#         for modifier_1 in (-1, 1):
+#             for modifier_2 in (-1, 1):
+#                 file_coord = file + modifier_1
+#                 rank_coord = rank + modifier_2
+#                 self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank_coord))
+#         for coord in (-1, 1):
+#             file_coord = file + coord
+#             self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank))
+#             rank_coord = rank + coord
+#             self.potential_position_add(self.temp_func_for_old_coord_format_set(file, rank_coord))
 # ==========================================================================
 
-class Rook(Figure):
 
-    def move_mechanic(self, board):
-        # file, rank = self.temp_func_for_new_position_field_get()
-        file = self.current_position.file
-        rank = self.current_position.rank
-        self.linear_movement(file, rank)
-
-    def __str__(self):
-        return 'R'
+class AbstractKing(Figure, ABC):
+    pass

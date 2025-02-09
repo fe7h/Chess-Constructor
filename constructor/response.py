@@ -9,7 +9,7 @@ class StatusCode(IntEnum):
     IS_CHECK = 102
 
 
-@dataclass
-class Response(frozenset=True):
+@dataclass(frozen=True)
+class Response:
     status: StatusCode
     data: Any = None
