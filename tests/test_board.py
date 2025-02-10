@@ -10,7 +10,17 @@ BLACK = 'black'
 
 class King(figures.AbstractKing):
     def move_mechanic(self, board, *args, **kwargs):
-        pass
+            for modifier_1 in (-1, 1):
+                for modifier_2 in (-1, 1):
+                    file_coord = self.position.file + modifier_1
+                    rank_coord = self.position.rank + modifier_2
+                    self.valid_move_add(board, figures.Coord(file_coord, rank_coord))
+            for coord in (-1, 1):
+                file_coord = self.position.file + coord
+                self.valid_move_add(board, figures.Coord(file_coord, self.position.rank))
+                rank_coord = self.position.rank + coord
+                self.valid_move_add(board, figures.Coord(self.position.file, rank_coord))
+
     def __str__(self):
         return 'K'
 
@@ -18,6 +28,7 @@ class King(figures.AbstractKing):
 class Rook(figures.Figure):
     def __str__(self):
         return 'R'
+
     def move_mechanic(self, board, *args, **kwargs):
         for modifier in (-1, 1):
             for i in range(1, 8):
@@ -44,6 +55,20 @@ def board_obj():
 
     return board_obj
 
+@pytest.fixture
+def board_obj_2():
+    board_obj = board.Board()
+
+    test_king = King(WHITE, figures.Coord(1,1))
+    b_rook = Rook(BLACK, figures.Coord(2,8))
+
+    board_obj.figures_data[test_king.position] = test_king
+    board_obj.figures_data[b_rook.position] = b_rook
+
+    board_obj.kings_list.add(test_king)
+
+    return board_obj
+
 
 @pytest.mark.parametrize('coord, expected',[
     (figures.Coord(1,2), {figures.Coord(1,i) for i in range(3,9)}),
@@ -55,3 +80,15 @@ def test_check_validation(coord, expected, board_obj):
 
     board_obj.all_moves_calculated()
     assert board_obj.figures_data.get(coord).valid_moves.normal == expected
+
+@pytest.mark.parametrize('coord, expected',[
+    (figures.Coord(8,2), 'stalemate'),
+    (figures.Coord(1,8), 'checkmate')
+])
+def test_is_checkmate(coord, expected, board_obj_2):
+    b_rook = Rook(BLACK, coord)
+    board_obj_2.figures_data[b_rook.position] = b_rook
+
+    board_obj_2.all_moves_calculated()
+    board_obj_2.all_moves_calculated()
+    assert board_obj_2.temp_func_is_checkmate() == expected

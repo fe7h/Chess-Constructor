@@ -151,4 +151,5 @@ class Figure(ABC):
 
 
 class AbstractKing(Figure, ABC):
-    pass
+    def temp_func_for_minus_attacked_fields(self, board):
+        self.valid_moves.normal = self.valid_moves.normal - board.attacked_field_data.get_attacked_squares(self)

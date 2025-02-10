@@ -36,7 +36,7 @@ class AttackedSquares:
 
 class Board:
 
-    __slots__ = ('figures_data', 'attacked_field_data', 'kings_list', 'deep')
+    # __slots__ = ('figures_data', 'attacked_field_data', 'kings_list', 'deep')
 
     def __init__(self):
         self.figures_data: Dict[Coord, Figure] = {}
@@ -51,6 +51,9 @@ class Board:
             figure = self.figures_data.get(coord)
             figure.moves_calculated(self)
             self.attacked_field_data.update(figure)
+        # вынести в одельную функцию
+        for king in self.kings_list:
+            king.temp_func_for_minus_attacked_fields(self)
 
     def check_validation(self, figure: Figure, position: Coord):
         if self.deep:
@@ -96,3 +99,19 @@ class Board:
                 del self.figures_data[old_position]
             self.all_moves_calculated()
         return Response(StatusCode.WRONG_MOVE)
+
+    def temp_func_is_checkmate(self):
+        for king in self.kings_list:
+            if king.valid_moves.normal == set(): # есть ли ходы у короля
+                for figure in self.figures_data.values():
+                    if figure.color == king.color and figure.valid_moves.normal != set(): # есть ли ходы у фигур
+                        return 'no checkmate'
+                    if king.position in self.attacked_field_data.get_attacked_squares(king): # король под атакой
+                        return 'checkmate'
+                    return 'stalemate'
+                return 'no checkmate'
+
+    def end_of_turn(self):
+        # self.pawn_transform()
+        self.all_moves_calculated()
+        # self.is_checkmate()
