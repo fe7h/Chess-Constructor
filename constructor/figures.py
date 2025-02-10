@@ -3,7 +3,7 @@ from collections import namedtuple
 from typing import Set
 
 # settings
-COORD_PATTERN = {'file', 'rank'}
+COORD_PATTERN = ['file', 'rank']
 FILE_SIZE = 8
 RANK_SIZE = 8
 # ========
