@@ -38,6 +38,7 @@ class Figure(ABC):
     def __str__(self):
         pass
 
+# УБРАТЬ СЕТЕРРЫ И ЗАМЕНИТЬ ФУНКЦИЕЙ
     @property
     def position(self):
         return self.current_position
@@ -50,8 +51,10 @@ class Figure(ABC):
 
     @abstractmethod
     def move_mechanic(self, board, *args, **kwargs):
+        """should use valid_move_add"""
         pass
 
+# СДЕЛАТЬ ЧЕРЕЗ ХЕНДЛЕР ВСЕХ ФУНКЦИЙ КОТОРЫЕ НУЖНЫ ПЕРЕД МУВ МЕХАНИК
     def moves_calculated(self, board, *args, **kwargs):
         self.valid_moves.clear()
         self.move_mechanic(board, *args, **kwargs)
@@ -63,7 +66,17 @@ class Figure(ABC):
             for atr in COORD_PATTERN
         )
 
-    # def potential_position_add(self, position):
+    def temp_valid_if_normal(self, board, position):
+        self.valid_moves.normal.add(position)
+
+    def temp_valid_if_normal_and_attack(self, board, position):
+        self.valid_moves.normal.add(position)  # сделать как отдельный метод
+        self.valid_moves.capturing.add(position)  #
+
+    def temp_valid_if_protected(self, board, position):
+        self.valid_moves.protected.add(position)
+
+    # ПЕРЕПИСАТЬ!
     def valid_move_add(self, board, position: Coord) -> bool | None:
         """
         :param position:
@@ -76,15 +89,14 @@ class Figure(ABC):
             if board.check_validation(self, position):
                 return False
             if self.color != board.figures_data.get(position).color:
-                self.valid_moves.normal.add(position)
-                self.valid_moves.capturing.add(position)
+                self.temp_valid_if_normal_and_attack(board, position)       # сделать как отдельный метод
             else:
-                self.valid_moves.protected.add(position) #не попадает если свзаная фигура ИСПРАВИТЬ!
+                self.temp_valid_if_protected(board, position) #не попадает если свзаная фигура ИСПРАВИТЬ! сделать как отдельный метод
             return False
         elif self.position_check(position):
             if board.check_validation(self, position):
                 return True
-            self.valid_moves.normal.add(position)
+            self.temp_valid_if_normal(board, position)           # сделать как отдельный метод
             return True
         return None
 
@@ -153,3 +165,48 @@ class Figure(ABC):
 class AbstractKing(Figure, ABC):
     def temp_func_for_minus_attacked_fields(self, board):
         self.valid_moves.normal = self.valid_moves.normal - board.attacked_field_data.get_attacked_squares(self)
+
+
+class EnPassantCapturingFigure(Figure, ABC):
+    def __init__(self, color: str, position: Coord):
+        self.en_passant_trail = set() #set[coord]
+        super().__init__(color, position)
+
+    @abstractmethod
+    def back_trail(self):
+        """should return a coords that can be attacked en passant move"""
+        pass
+
+    @Figure.position.setter
+    def position(self, new_position: Coord):
+        Figure.position.fset(self, new_position)
+        # super().position = new_position
+        self.back_trail()
+
+    def moves_calculated(self, board, *args, **kwargs):
+        self.en_passant_trail.clear()
+        super().moves_calculated(board, *args, **kwargs)
+
+    def temp_valid_if_normal(self, board, position):
+        super().temp_valid_if_normal(board, position)
+        if position in board.temp_en_passant_file[self.color]:
+            self.valid_moves.capturing.add(position)
+
+
+class MoveNotEqualAttack(Figure, ABC):
+    def for_attack(self, board, position: Coord) -> bool | None:
+        pass
+
+    def for_move(self, board, position: Coord) -> bool | None:
+        pass
+
+    def valid_move_add(self, board, position: Coord) -> bool | None:
+        raise Exception("Not correct method")
+
+    def move_mechanic(self, board, *args, **kwargs):
+        """should use for_attack and for_move"""
+        return super().move_mechanic(board, *args, **kwargs)
+
+
+class AbstractPawn(EnPassantCapturingFigure, MoveNotEqualAttack, ABC):
+    pass

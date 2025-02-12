@@ -10,7 +10,7 @@ from constructor.response import StatusCode, Response
 COLORS = {'white', 'black'}
 # ========
 
-
+# ОБЕЗЛИЧИТЬ КЛАСС И СДЕЛАТЬ ЕГО БОЛЕЕ ВАРИАТИВНЫМ
 class AttackedSquares:
     def __init__(self, colors):
         self.__under_attack = {color: set() for color in colors}
@@ -44,6 +44,7 @@ class Board:
         self.attacked_field_data = AttackedSquares(COLORS)
         self.kings_list = set()
         self.deep = True
+        self.temp_en_passant_file = {'black':dict(),'white':dict()}
 
     def all_moves_calculated(self):
         self.attacked_field_data.clear()
@@ -91,13 +92,19 @@ class Board:
                 self.kings_list.add(figure)
         self.all_moves_calculated()
 
+    # переписать всю функцию в более явном виде
     def make_a_move(self, old_position: Coord, new_position: Coord):
         if old_position in self.figures_data:
-            self.figures_data[old_position].position = new_position
+            figure = self.figures_data[old_position]
+            figure.position = new_position
             if self.figures_data[old_position].position == new_position:
                 self.figures_data[new_position] = self.figures_data[old_position]
+                # переписать взятие фигур в явном виде
                 del self.figures_data[old_position]
-            self.all_moves_calculated()
+            if isinstance(figure, EnPassantCapturingFigure):
+                if new_position in self.temp_en_passant_file[figure.color]:
+                    del self.figures_data[self.temp_en_passant_file[figure.color][new_position].position]
+            self.all_moves_calculated() #убрать от сюда
         return Response(StatusCode.WRONG_MOVE)
 
     def temp_func_is_checkmate(self):
@@ -111,7 +118,19 @@ class Board:
                     return 'stalemate'
                 return 'no checkmate'
 
+    def temp_get_en_passant_area(self):
+        self.temp_en_passant_file = {'black':dict(),'white':dict()}
+        for figure in self.figures_data.values():
+            if isinstance(figure, EnPassantCapturingFigure):
+                color = 'black' if figure.color == 'white' else 'white'
+                self.temp_en_passant_file[color].update({coord:figure for coord in figure.en_passant_trail})
+
+
     def end_of_turn(self):
         # self.pawn_transform()
+        # self.get_en_passant_area()
         self.all_moves_calculated()
         # self.is_checkmate()
+
+    # для ракировки сдлетаь функцию которая на вход будет принимать любое количество пар фигур и координат и размешать их по ним
+    # и сделать отдельную функцию для размещения и удаления фигуры
