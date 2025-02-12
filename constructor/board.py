@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, Type
 import copy
 
 from constructor.figures import *
@@ -8,6 +8,8 @@ from constructor.response import StatusCode, Response
 
 # settings
 COLORS = {'white', 'black'}
+PAWN_TRANSFORM_AREA = {'white':{Coord(8, i) for i in range(9)},
+                       'black':{Coord(1, i) for i in range(9)}}
 # ========
 
 # ОБЕЗЛИЧИТЬ КЛАСС И СДЕЛАТЬ ЕГО БОЛЕЕ ВАРИАТИВНЫМ
@@ -45,6 +47,7 @@ class Board:
         self.kings_list = set()
         self.deep = True
         self.temp_en_passant_file = {'black':dict(),'white':dict()}
+        self.temp_pawn_transform_area = PAWN_TRANSFORM_AREA
 
     def all_moves_calculated(self):
         self.attacked_field_data.clear()
@@ -125,8 +128,23 @@ class Board:
                 color = 'black' if figure.color == 'white' else 'white'
                 self.temp_en_passant_file[color].update({coord:figure for coord in figure.en_passant_trail})
 
+    def temp_func_pawn_transform(self):
+        for figure in self.figures_data.values():
+            if isinstance(figure, AbstractPawn):
+                if figure.position in self.temp_pawn_transform_area.get(figure.color):
+                    return f'pawn {str(figure.position)} must transform'
+
+    def temp_transform(self, position: Coord, figure: Type[Figure]):
+        if position in self.figures_data:
+            old_figure = self.figures_data.pop(position)
+            new_figure = figure(color=old_figure.color,position=old_figure.position)
+            self.figures_data[new_figure.position] = new_figure
+            # добавить запрет на фигуры для трансформации
+        return 'bad position'
+
 
     def end_of_turn(self):
+        """must return status codes"""
         # self.pawn_transform()
         # self.get_en_passant_area()
         self.all_moves_calculated()

@@ -8,6 +8,7 @@ COLORS = {'white', 'black'}
 WHITE = 'white'
 BLACK = 'black'
 
+
 class King(figures.AbstractKing):
     def move_mechanic(self, board, *args, **kwargs):
             for modifier_1 in (-1, 1):
@@ -50,11 +51,16 @@ class Pawn(AbstractPawn):
     def __str__(self):
         return 'P'
 
-    def move_mechanic(self, board, *args, **kwargs):
-        if self.valid_move_add(board, figures.Coord(self.position.file + 1, self.position.rank)):
-            self.valid_move_add(board, figures.Coord(self.position.file + 2, self.position.rank))
+    def back_trail(self):
+        pass
 
-        self.valid_move_add(board, figures.Coord(self.position.file + 1, self.position.rank))
+    def move_mechanic(self, board, *args, **kwargs):
+        pass
+        # if self.valid_move_add(board, figures.Coord(self.position.file + 1, self.position.rank)):
+        #     self.valid_move_add(board, figures.Coord(self.position.file + 2, self.position.rank))
+        #
+        # self.valid_move_add(board, figures.Coord(self.position.file + 1, self.position.rank))
+
 
 @pytest.fixture
 def board_obj():
@@ -136,3 +142,17 @@ def test_en_passant():
 
     board_obj.make_a_move(figures.Coord(2,8), figures.Coord(2,1))
     assert b_rook not in board_obj.figures_data.values()
+
+def test_pawn_transform():
+    board_obj = board.Board()
+
+    coord = figures.Coord(8, 1)
+    w_pawn = Pawn(WHITE, coord)
+
+    board_obj.figures_data[coord] = w_pawn
+
+    res = board_obj.temp_func_pawn_transform()
+    assert res == f'pawn {str(w_pawn.position)} must transform'
+
+    board_obj.temp_transform(w_pawn.position, Rook)
+    assert isinstance(board_obj.figures_data[coord], Rook)
