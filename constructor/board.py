@@ -112,9 +112,9 @@ class Board:
 
     def temp_func_is_checkmate(self):
         for king in self.kings_list:
-            if king.valid_moves.normal == set(): # есть ли ходы у короля
+            if king.valid_moves.blank == set(): # есть ли ходы у короля
                 for figure in self.figures_data.values():
-                    if figure.color == king.color and figure.valid_moves.normal != set(): # есть ли ходы у фигур
+                    if figure.color == king.color and figure.valid_moves.blank != set(): # есть ли ходы у фигур
                         return 'no checkmate'
                     if king.position in self.attacked_field_data.get_attacked_squares(king): # король под атакой
                         return 'checkmate'
@@ -141,7 +141,6 @@ class Board:
             self.figures_data[new_figure.position] = new_figure
             # добавить запрет на фигуры для трансформации
         return 'bad position'
-
 
     def end_of_turn(self):
         """must return status codes"""

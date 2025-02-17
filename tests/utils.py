@@ -69,8 +69,13 @@ class PawnOnlyWithMoveNotEqualAttack(figures.MoveNotEqualAttack):
             file_coord = self.position.file + modifier
             rank_coord = self.position.rank
             new_position = figures.Coord(file=file_coord, rank=rank_coord)
+
             if not self.for_move(board, new_position):
                 break
 
         for modifier in (-1,1):
-            self.for_attack(board, figures.Coord)
+            file_coord = self.position.file + 1
+            rank_coord = self.position.rank + modifier
+            new_position = figures.Coord(file=file_coord, rank=rank_coord)
+
+            self.for_attack(board, new_position)

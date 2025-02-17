@@ -11,20 +11,26 @@ RANK_SIZE = 8
 Coord = namedtuple('Coord', COORD_PATTERN)
 
 
-#ТОЧНО ПЕРЕПИСАТЬ!
+#ТОЧНО ПЕРЕПИСАТЬ! сделать свой аналог намтапела, только как некое подобие мультисета
 class MovesSet:
-    def __init__(self):
-        self.normal: Set[Coord] = set()
+    def __init__(self, blank_is_attack = True):
+        self.blank: Set[Coord] = set() # self.normal: Set[Coord] = set()
         self.capturing: Set[Coord] = set()
         self.protected: Set[Coord] = set()
+        self.attack: Set[Coord] = self.blank if blank_is_attack else set()
 
     def clear(self):
-        self.normal.clear()
+        self.blank.clear()
         self.capturing.clear()
         self.protected.clear()
+        self.attack.clear()
 
+    # danger
     def get(self):
-        return self.normal | self.capturing | self.protected
+        return self.attack | self.protected
+
+    def get_valid(self):
+        return self.blank | self.capturing
 
 
 class Figure(ABC):
@@ -32,7 +38,10 @@ class Figure(ABC):
         self.color = color
         self.current_position = position
         self.special_move = True
-        self.valid_moves = MovesSet()
+        self.valid_moves = self.temp_func_for_set_MovesSet()
+
+    def temp_func_for_set_MovesSet(self):
+        return MovesSet()
 
     @abstractmethod
     def __str__(self):
@@ -45,7 +54,7 @@ class Figure(ABC):
 
     @position.setter
     def position(self, new_position: Coord):
-        if new_position in self.valid_moves.get():
+        if new_position in self.valid_moves.get_valid():
             self.special_move = False
             self.current_position = new_position
 
@@ -67,14 +76,17 @@ class Figure(ABC):
         )
 
     def temp_valid_if_normal(self, board, position):
-        self.valid_moves.normal.add(position)
+        self.valid_moves.blank.add(position) # а тут использовать бланк
 
     def temp_valid_if_normal_and_attack(self, board, position):
-        self.valid_moves.normal.add(position)  # сделать как отдельный метод
-        self.valid_moves.capturing.add(position)  #
+        self.valid_moves.attack.add(position)  # сделать как отдельный метод
+        self.valid_moves.capturing.add(position)  # тут использовать атак
 
     def temp_valid_if_protected(self, board, position):
         self.valid_moves.protected.add(position)
+
+    def temp_valid_if_attack(self, board, position):
+        self.valid_moves.attack.add(position)
 
     # ПЕРЕПИСАТЬ!
     def valid_move_add(self, board, position: Coord) -> bool | None:
@@ -164,7 +176,7 @@ class Figure(ABC):
 
 class AbstractKing(Figure, ABC):
     def temp_func_for_minus_attacked_fields(self, board):
-        self.valid_moves.normal = self.valid_moves.normal - board.attacked_field_data.get_attacked_squares(self)
+        self.valid_moves.blank = self.valid_moves.blank - board.attacked_field_data.get_attacked_squares(self)
 
 
 class EnPassantCapturingFigure(Figure, ABC):
@@ -194,11 +206,47 @@ class EnPassantCapturingFigure(Figure, ABC):
 
 
 class MoveNotEqualAttack(Figure, ABC):
-    def for_attack(self, board, position: Coord) -> bool | None:
-        pass
+    def for_attack(self, board, position: Coord) -> bool | None: # нету +blank
+        """
+          :param position:
+          :return:
+              True: if position points to empty square
+              False: if position points to occupied square
+              None: if position out of board size
+          """
+        if position in board.figures_data:
+            if board.check_validation(self, position):
+                return False
+            if self.color != board.figures_data.get(position).color:
+                self.temp_valid_if_normal_and_attack(board, position)
+            else:
+                self.temp_valid_if_protected(board, position)
+            return False
+        elif self.position_check(position):
+            if board.check_validation(self, position):
+                return True
+            self.temp_valid_if_attack(board, position)
+            return True
+        return None
 
-    def for_move(self, board, position: Coord) -> bool | None:
-        pass
+    def for_move(self, board, position: Coord) -> bool | None:  # нету +protect и +attack+capturing
+        """
+          :param position:
+          :return:
+              True: if position points to empty square
+              False: if position points to occupied square
+              None: if position out of board size
+          """
+        if position in board.figures_data:
+            if board.check_validation(self, position):
+                return False
+            return False
+        elif self.position_check(position):
+            if board.check_validation(self, position):
+                return True
+            self.temp_valid_if_normal(board, position)
+            return True
+        return None
 
     def valid_move_add(self, board, position: Coord) -> bool | None:
         raise Exception("Not correct method")
@@ -206,6 +254,9 @@ class MoveNotEqualAttack(Figure, ABC):
     def move_mechanic(self, board, *args, **kwargs):
         """should use for_attack and for_move"""
         return super().move_mechanic(board, *args, **kwargs)
+
+    def temp_func_for_set_MovesSet(self):
+        return MovesSet(blank_is_attack=False)
 
 
 class AbstractPawn(EnPassantCapturingFigure, MoveNotEqualAttack, ABC):
