@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import Set
+import weakref
+
 
 # settings
 COORD_PATTERN = ['file', 'rank']
 FILE_SIZE = 8
 RANK_SIZE = 8
 # ========
-
+# переписать своим классом или просто расширить этот что бы были доступны орефметические операции которые будут возвращать новый обект коорд
 Coord = namedtuple('Coord', COORD_PATTERN)
 
 
@@ -68,6 +70,7 @@ class Figure(ABC):
         self.valid_moves.clear()
         self.move_mechanic(board, *args, **kwargs)
 
+    # вынести в боорд
     @staticmethod
     def position_check(position: Coord):
         return all(
@@ -258,6 +261,32 @@ class MoveNotEqualAttack(Figure, ABC):
     def temp_func_for_set_MovesSet(self):
         return MovesSet(blank_is_attack=False)
 
+
+class Castling(Figure, ABC):
+    def __init__(self, color: str, position: Coord):
+        self.castling_target_type = self.castling_target_type_set() #Figure type
+        self.castling_target = weakref.WeakSet() #WeakSet[Figure] убрать викреф и тобавить метод проерку который будет вызываеться в конце раунда и удалять все лишние фигуры
+        self.valid_castling = dict() #{Coord: set(tuple(old_coord, new_coord), ...), ...} заменить на совй класс как с мувсет
+        super().__init__(color, position)
+
+    @abstractmethod
+    def castling_mechanic(self, figure, board, *args, **kwargs):
+        """should add tuple(old_coord, new_coord) in valid_castling"""
+        pass
+
+    def castlings_calculated(self, board, *args, **kwargs):
+        self.valid_castling.clear()
+        for figure in self.castling_target:
+            self.castling_mechanic(figure, board, *args, **kwargs)
+
+    def add_castling_target(self, figure:Figure):
+        # разгрести условия
+        if isinstance(figure, self.castling_target_type) or self.castling_target_type == tuple() and not figure is self:
+            if figure.color == self.color:
+                self.castling_target.add(figure)
+
+    def castling_target_type_set(self):
+        return tuple()
 
 class AbstractPawn(EnPassantCapturingFigure, MoveNotEqualAttack, ABC):
     pass

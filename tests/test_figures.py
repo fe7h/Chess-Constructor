@@ -3,7 +3,7 @@ import pytest
 from constructor import board
 from constructor import figures
 
-from utils import Rook, BLACK, PawnOnlyWithMoveNotEqualAttack, WHITE
+from utils import Rook, BLACK, PawnOnlyWithMoveNotEqualAttack, WHITE, CastlingKing
 
 
 @pytest.fixture
@@ -12,6 +12,17 @@ def board_data():
     b_rook = Rook(BLACK, figures.Coord(3, 4))
 
     board_obj.figures_data[b_rook.position] = b_rook
+
+    return board_obj
+
+@pytest.fixture
+def board_data_castling():
+    board_obj = board.Board()
+    w_rook1 = Rook(WHITE, figures.Coord(1, 1))
+    w_rook2 = Rook(WHITE, figures.Coord(1, 8))
+
+    board_obj.figures_data[w_rook1.position] = w_rook1
+    board_obj.figures_data[w_rook2.position] = w_rook2
 
     return board_obj
 
@@ -107,3 +118,19 @@ def test_MoveNotEqualAttack_figure(coord, blank, attack, board_data, capturing):
     assert w_pawn.valid_moves.blank == blank
     assert w_pawn.valid_moves.attack == attack
     assert w_pawn.valid_moves.capturing == capturing
+
+def test_castling(board_data_castling):
+    w_king = CastlingKing(WHITE, figures.Coord(1, 5))
+
+    for figure in board_data_castling.figures_data.values():
+        w_king.add_castling_target(figure)
+
+    board_data_castling.figures_data[w_king.position] = w_king
+
+    board_data_castling.all_moves_calculated()
+    board_data_castling.all_castling_calculated()
+
+    assert w_king.valid_castling == {figures.Coord(1, 1): {(figures.Coord(1, 1), figures.Coord(1, 4)),
+                                                           (figures.Coord(1, 5), figures.Coord(1, 3))},
+                                     figures.Coord(1, 8): {(figures.Coord(1, 8), figures.Coord(1, 6)),
+                                                           (figures.Coord(1, 5), figures.Coord(1, 7))}}

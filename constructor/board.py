@@ -34,6 +34,7 @@ class AttackedSquares:
 
     def under_attack(self):
         pass
+#     добавить метод для in
 
 
 class Board:
@@ -58,6 +59,11 @@ class Board:
         # вынести в одельную функцию
         for king in self.kings_list:
             king.temp_func_for_minus_attacked_fields(self)
+
+    def all_castling_calculated(self):
+        for figure in self.figures_data.values():
+            if isinstance(figure, Castling):
+                figure.castlings_calculated(self)
 
     def check_validation(self, figure: Figure, position: Coord):
         if self.deep:

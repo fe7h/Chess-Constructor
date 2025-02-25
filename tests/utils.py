@@ -79,3 +79,30 @@ class PawnOnlyWithMoveNotEqualAttack(figures.MoveNotEqualAttack):
             new_position = figures.Coord(file=file_coord, rank=rank_coord)
 
             self.for_attack(board, new_position)
+
+
+class CastlingKing(King, figures.Castling):
+    def castling_mechanic(self, figure, board, *args, **kwargs):
+        target_coord = figure.position
+        modifier_direction = -1 if target_coord.rank == 1 else 1
+
+        if figure.special_move:
+            if all(map(lambda coord: not coord in board.attacked_field_data.get_attacked_squares(self),
+                       (figures.Coord(file=self.position.file,
+                                      rank=self.position.rank + rank * modifier_direction) for rank in range(3)))):
+
+                self_old_coord = self.position
+                self_new_coord = Coord(file=self.position.file,
+                                       rank=self.position.rank + 2 * modifier_direction)
+
+                figure_old_coord = figure.position
+                figure_new_coord = Coord(file=figure.position.file,
+                                         rank=figure.position.rank + 2 * modifier_direction * -1 + (1 if modifier_direction == -1 else 0))
+
+                self.valid_castling[target_coord] = {
+                    (self_old_coord, self_new_coord),
+                    (figure_old_coord, figure_new_coord)
+                }
+
+    def castling_target_type_set(self):
+        return Rook
