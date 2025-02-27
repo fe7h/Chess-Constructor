@@ -37,28 +37,28 @@ class AttackedSquares:
 #     добавить метод для in
 
 
-class Board:
-
-    # __slots__ = ('figures_data', 'attacked_field_data', 'kings_list', 'deep')
-
+class OldBoard:
     def __init__(self):
         self.figures_data: Dict[Coord, Figure] = {}
-        # self.attacked_field_data = {'w': set(), 'b': set()}
-        self.attacked_field_data = AttackedSquares(COLORS)
+
+        # self.attacked_field_data = AttackedSquares(COLORS)
+
         self.kings_list = set()
         self.deep = True
+
         self.temp_en_passant_file = {'black':dict(),'white':dict()}
+
         self.temp_pawn_transform_area = PAWN_TRANSFORM_AREA
 
-    def all_moves_calculated(self):
-        self.attacked_field_data.clear()
-        for coord in self.figures_data:
-            figure = self.figures_data.get(coord)
-            figure.moves_calculated(self)
-            self.attacked_field_data.update(figure)
-        # вынести в одельную функцию
-        for king in self.kings_list:
-            king.temp_func_for_minus_attacked_fields(self)
+    # def all_moves_calculated(self):
+    #     self.attacked_field_data.clear()
+    #     for coord in self.figures_data:
+    #         figure = self.figures_data.get(coord)
+    #         figure.moves_calculated(self)
+    #         self.attacked_field_data.update(figure)
+    #     # вынести в одельную функцию
+    #     for king in self.kings_list:
+    #         king.temp_func_for_minus_attacked_fields(self)
 
     def all_castling_calculated(self):
         for figure in self.figures_data.values():
@@ -157,3 +157,74 @@ class Board:
 
     # для ракировки сдлетаь функцию которая на вход будет принимать любое количество пар фигур и координат и размешать их по ним
     # и сделать отдельную функцию для размещения и удаления фигуры
+
+
+# вынести в отдельный файл и довести до ума
+class PriorityList:
+    def __init__(self):
+        self.__data = dict()
+
+    def set(self, priority, obj):
+        self.__data[priority] = obj
+        self._sort()
+
+    def _sort(self):
+        self.__data = {key: self.__data[key] for key in sorted(self.__data)}
+
+    def __iter__(self):
+        return iter(tuple(val for val in self.__data.values()))
+
+    def __call__(self, priority):
+        def wrapper(func):
+            self.set(priority, func)
+            return func
+        return wrapper
+
+
+class MoveMixin:
+
+    move_mixin_priority = PriorityList()
+
+    def __init__(self):
+        self.attacked_field_data = AttackedSquares(COLORS)
+        super().__init__()
+
+    @move_mixin_priority(0)
+    def _attacked_field_data_clear(self):
+        self.attacked_field_data.clear()
+
+    @move_mixin_priority(10)
+    def _all_moves_calculated_call(self):
+        for figure in self.figures_data.values():
+            figure.moves_calculated(self)
+            self.attacked_field_data.update(figure)
+
+    def all_moves_calculated(self):
+        # self._attacked_field_data_clear()
+        # self._all_moves_calculated_call()
+        for func in self.move_mixin_priority:
+            func(self)
+
+        # вынести в одельную функцию
+        for king in self.kings_list:
+            king.temp_func_for_minus_attacked_fields(self)
+
+
+class EnPassantMixin:
+    pass
+
+
+class CastlingMixin:
+    pass
+
+
+class TransformMixin:
+    pass
+
+
+class KingMixin:
+    pass
+
+
+class Board(MoveMixin, EnPassantMixin, CastlingMixin, TransformMixin, KingMixin, OldBoard):
+    pass
