@@ -46,7 +46,7 @@ class OldBoard:
         self.kings_list = set()
         self.deep = True
 
-        self.temp_en_passant_file = {'black':dict(),'white':dict()}
+        # self.temp_en_passant_file = {'black':dict(),'white':dict()}
 
         self.temp_pawn_transform_area = PAWN_TRANSFORM_AREA
 
@@ -127,12 +127,12 @@ class OldBoard:
                     return 'stalemate'
                 return 'no checkmate'
 
-    def temp_get_en_passant_area(self):
-        self.temp_en_passant_file = {'black':dict(),'white':dict()}
-        for figure in self.figures_data.values():
-            if isinstance(figure, EnPassantCapturingFigure):
-                color = 'black' if figure.color == 'white' else 'white'
-                self.temp_en_passant_file[color].update({coord:figure for coord in figure.en_passant_trail})
+    # def temp_get_en_passant_area(self):
+    #     self.temp_en_passant_file = {'black':dict(),'white':dict()}
+    #     for figure in self.figures_data.values():
+    #         if isinstance(figure, EnPassantCapturingFigure):
+    #             color = 'black' if figure.color == 'white' else 'white'
+    #             self.temp_en_passant_file[color].update({coord:figure for coord in figure.en_passant_trail})
 
     def temp_func_pawn_transform(self):
         for figure in self.figures_data.values():
@@ -210,19 +210,30 @@ class MoveMixin:
             king.temp_func_for_minus_attacked_fields(self)
 
 
+class KingMixin:
+    pass
+
+
 class EnPassantMixin:
+    def __init__(self):
+        self.temp_en_passant_file = {'black':dict(),'white':dict()} #{color: {coord:figure, ...}, ...}
+        super().__init__()
+
+    def temp_get_en_passant_area(self):
+        self.temp_en_passant_file = {'black':dict(),'white':dict()}
+        for figure in self.figures_data.values():
+            if isinstance(figure, EnPassantCapturingFigure):
+                color = 'black' if figure.color == 'white' else 'white'
+                self.temp_en_passant_file[color].update({coord:figure for coord in figure.en_passant_trail})
+
+
+class ClassicMoveMethodsMixin():
     pass
-
-
-class CastlingMixin:
-    pass
-
 
 class TransformMixin:
     pass
 
-
-class KingMixin:
+class CastlingMixin:
     pass
 
 
