@@ -43,8 +43,8 @@ class OldBoard:
 
         # self.attacked_field_data = AttackedSquares(COLORS)
 
-        self.kings_list = set()
-        self.deep = True
+        # self.kings_list = set()
+        # self.deep = True
 
         # self.temp_en_passant_file = {'black':dict(),'white':dict()}
 
@@ -65,19 +65,19 @@ class OldBoard:
             if isinstance(figure, Castling):
                 figure.castlings_calculated(self)
 
-    def check_validation(self, figure: Figure, position: Coord):
-        if self.deep:
-            deep_board = copy.deepcopy(self)
-            deep_board.deep = False
-            deep_figure = deep_board.figures_data.pop(figure.position)
-            deep_board.figures_data[position] = deep_figure
-
-            deep_board.all_moves_calculated()
-            for king in deep_board.kings_list:
-                if king.color == figure.color:
-                    if king.position in deep_board.attacked_field_data.get_attacked_squares(king):
-                        return True
-        return False
+    # def check_validation(self, figure: Figure, position: Coord):
+    #     if self.deep:
+    #         deep_board = copy.deepcopy(self)
+    #         deep_board.deep = False
+    #         deep_figure = deep_board.figures_data.pop(figure.position)
+    #         deep_board.figures_data[position] = deep_figure
+    #
+    #         deep_board.all_moves_calculated()
+    #         for king in deep_board.kings_list:
+    #             if king.color == figure.color:
+    #                 if king.position in deep_board.attacked_field_data.get_attacked_squares(king):
+    #                     return True
+    #     return False
 
 
     # @abstractmethod
@@ -116,16 +116,16 @@ class OldBoard:
             self.all_moves_calculated() #убрать от сюда
         return Response(StatusCode.WRONG_MOVE)
 
-    def temp_func_is_checkmate(self):
-        for king in self.kings_list:
-            if king.valid_moves.blank == set(): # есть ли ходы у короля
-                for figure in self.figures_data.values():
-                    if figure.color == king.color and figure.valid_moves.blank != set(): # есть ли ходы у фигур
-                        return 'no checkmate'
-                    if king.position in self.attacked_field_data.get_attacked_squares(king): # король под атакой
-                        return 'checkmate'
-                    return 'stalemate'
-                return 'no checkmate'
+    # def temp_func_is_checkmate(self):
+    #     for king in self.kings_list:
+    #         if king.valid_moves.blank == set(): # есть ли ходы у короля
+    #             for figure in self.figures_data.values():
+    #                 if figure.color == king.color and figure.valid_moves.blank != set(): # есть ли ходы у фигур
+    #                     return 'no checkmate'
+    #                 if king.position in self.attacked_field_data.get_attacked_squares(king): # король под атакой
+    #                     return 'checkmate'
+    #                 return 'stalemate'
+    #             return 'no checkmate'
 
     # def temp_get_en_passant_area(self):
     #     self.temp_en_passant_file = {'black':dict(),'white':dict()}
@@ -206,12 +206,52 @@ class MoveMixin:
             func(self)
 
         # вынести в одельную функцию
-        for king in self.kings_list:
-            king.temp_func_for_minus_attacked_fields(self)
+        # for king in self.kings_list:
+        #     king.temp_func_for_minus_attacked_fields(self)
 
 
 class KingMixin:
-    pass
+    def __init__(self):
+        self.kings_list = set()
+        self.deep = True
+        super().__init__()
+
+    def check_validation(self, figure: Figure, position: Coord):
+        """проверяет не будет ли шаха королю если передвинуть свою фигуру
+        Копирует доску и совершает на ней ход если всё норм то вносит его в
+        список доступных ходов
+        """
+        if self.deep:
+            deep_board = copy.deepcopy(self)
+            deep_board.deep = False
+            deep_figure = deep_board.figures_data.pop(figure.position)
+            deep_board.figures_data[position] = deep_figure
+
+            deep_board.all_moves_calculated()
+            for king in deep_board.kings_list:
+                if king.color == figure.color:
+                    if king.position in deep_board.attacked_field_data.get_attacked_squares(king):
+                        return True
+        return False
+
+    def temp_func_is_checkmate(self):
+        """функция конца хода
+        провереят есть ли сейчас шах или мат королю"""
+        for king in self.kings_list:
+            if king.valid_moves.blank == set(): # есть ли ходы у короля
+                for figure in self.figures_data.values():
+                    if figure.color == king.color and figure.valid_moves.blank != set(): # есть ли ходы у фигур
+                        return 'no checkmate'
+                    if king.position in self.attacked_field_data.get_attacked_squares(king): # король под атакой
+                        return 'checkmate'
+                    return 'stalemate'
+                return 'no checkmate'
+
+    @MoveMixin.move_mixin_priority(100)
+    def all_accounting_attacked_field(self):
+        """убирает все атаковные поля с мувсетов всех королей"""
+        for king in self.kings_list:
+            king.temp_func_for_minus_attacked_fields(self)
 
 
 class EnPassantMixin:
@@ -227,8 +267,8 @@ class EnPassantMixin:
                 self.temp_en_passant_file[color].update({coord:figure for coord in figure.en_passant_trail})
 
 
-class ClassicMoveMethodsMixin():
-    pass
+# class ClassicMoveMethodsMixin(KingMixin, MoveMixin):
+#     pass
 
 class TransformMixin:
     pass
