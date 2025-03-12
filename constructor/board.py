@@ -38,47 +38,18 @@ class AttackedSquares:
 
 
 class OldBoard:
+    # должен включать:
+    # данные о разположении фигур (лучше сделать через двойной дикт)
+    # метод для смены позиции (make_a_move перенести в MoveMixin и он от туда будет вызвать метод удаления фигуры и метод смены позиции)
+    # метод для сменые сразу нескольких позиций
+    # метод удаления фигуры
+    # метод добавления фигур
+    # обработчик конца хода
+    # обработчик начала хода
+    # метод для расположения фигур в начале партии
+    # скорее всего так же должен дублировать с конфига размеры доски и валидировать по ним, а не в методе фигур
     def __init__(self):
         self.figures_data: Dict[Coord, Figure] = {}
-
-        # self.attacked_field_data = AttackedSquares(COLORS)
-
-        # self.kings_list = set()
-        # self.deep = True
-
-        # self.temp_en_passant_file = {'black':dict(),'white':dict()}
-
-        self.temp_pawn_transform_area = PAWN_TRANSFORM_AREA
-
-    # def all_moves_calculated(self):
-    #     self.attacked_field_data.clear()
-    #     for coord in self.figures_data:
-    #         figure = self.figures_data.get(coord)
-    #         figure.moves_calculated(self)
-    #         self.attacked_field_data.update(figure)
-    #     # вынести в одельную функцию
-    #     for king in self.kings_list:
-    #         king.temp_func_for_minus_attacked_fields(self)
-
-    def all_castling_calculated(self):
-        for figure in self.figures_data.values():
-            if isinstance(figure, Castling):
-                figure.castlings_calculated(self)
-
-    # def check_validation(self, figure: Figure, position: Coord):
-    #     if self.deep:
-    #         deep_board = copy.deepcopy(self)
-    #         deep_board.deep = False
-    #         deep_figure = deep_board.figures_data.pop(figure.position)
-    #         deep_board.figures_data[position] = deep_figure
-    #
-    #         deep_board.all_moves_calculated()
-    #         for king in deep_board.kings_list:
-    #             if king.color == figure.color:
-    #                 if king.position in deep_board.attacked_field_data.get_attacked_squares(king):
-    #                     return True
-    #     return False
-
 
     # @abstractmethod
     def figures_arrangement(self):
@@ -115,38 +86,6 @@ class OldBoard:
                     del self.figures_data[self.temp_en_passant_file[figure.color][new_position].position]
             self.all_moves_calculated() #убрать от сюда
         return Response(StatusCode.WRONG_MOVE)
-
-    # def temp_func_is_checkmate(self):
-    #     for king in self.kings_list:
-    #         if king.valid_moves.blank == set(): # есть ли ходы у короля
-    #             for figure in self.figures_data.values():
-    #                 if figure.color == king.color and figure.valid_moves.blank != set(): # есть ли ходы у фигур
-    #                     return 'no checkmate'
-    #                 if king.position in self.attacked_field_data.get_attacked_squares(king): # король под атакой
-    #                     return 'checkmate'
-    #                 return 'stalemate'
-    #             return 'no checkmate'
-
-    # def temp_get_en_passant_area(self):
-    #     self.temp_en_passant_file = {'black':dict(),'white':dict()}
-    #     for figure in self.figures_data.values():
-    #         if isinstance(figure, EnPassantCapturingFigure):
-    #             color = 'black' if figure.color == 'white' else 'white'
-    #             self.temp_en_passant_file[color].update({coord:figure for coord in figure.en_passant_trail})
-
-    def temp_func_pawn_transform(self):
-        for figure in self.figures_data.values():
-            if isinstance(figure, AbstractPawn):
-                if figure.position in self.temp_pawn_transform_area.get(figure.color):
-                    return f'pawn {str(figure.position)} must transform'
-
-    def temp_transform(self, position: Coord, figure: Type[Figure]):
-        if position in self.figures_data:
-            old_figure = self.figures_data.pop(position)
-            new_figure = figure(color=old_figure.color,position=old_figure.position)
-            self.figures_data[new_figure.position] = new_figure
-            # добавить запрет на фигуры для трансформации
-        return 'bad position'
 
     def end_of_turn(self):
         """must return status codes"""
@@ -202,12 +141,9 @@ class MoveMixin:
     def all_moves_calculated(self):
         # self._attacked_field_data_clear()
         # self._all_moves_calculated_call()
+        # all_accounting_attacked_field()
         for func in self.move_mixin_priority:
             func(self)
-
-        # вынести в одельную функцию
-        # for king in self.kings_list:
-        #     king.temp_func_for_minus_attacked_fields(self)
 
 
 class KingMixin:
@@ -271,10 +207,30 @@ class EnPassantMixin:
 #     pass
 
 class TransformMixin:
-    pass
+    def __init__(self):
+        self.temp_pawn_transform_area = PAWN_TRANSFORM_AREA
+        super().__init__()
+
+    def temp_func_pawn_transform(self):
+        for figure in self.figures_data.values():
+            if isinstance(figure, AbstractPawn):
+                if figure.position in self.temp_pawn_transform_area.get(figure.color):
+                    return f'pawn {str(figure.position)} must transform'
+
+    def temp_transform(self, position: Coord, figure: Type[Figure]):
+        if position in self.figures_data:
+            old_figure = self.figures_data.pop(position)
+            new_figure = figure(color=old_figure.color,position=old_figure.position)
+            self.figures_data[new_figure.position] = new_figure
+            # добавить запрет на фигуры для трансформации
+        return 'bad position'
+
 
 class CastlingMixin:
-    pass
+    def all_castling_calculated(self):
+        for figure in self.figures_data.values():
+            if isinstance(figure, Castling):
+                figure.castlings_calculated(self)
 
 
 class Board(MoveMixin, EnPassantMixin, CastlingMixin, TransformMixin, KingMixin, OldBoard):
