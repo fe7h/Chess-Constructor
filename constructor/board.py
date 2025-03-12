@@ -4,6 +4,7 @@ import copy
 
 from constructor.figures import *
 from constructor.response import StatusCode, Response
+from constructor.utils import AttackedSquares, PriorityList
 
 
 # settings
@@ -11,30 +12,6 @@ COLORS = {'white', 'black'}
 PAWN_TRANSFORM_AREA = {'white':{Coord(8, i) for i in range(9)},
                        'black':{Coord(1, i) for i in range(9)}}
 # ========
-
-# ОБЕЗЛИЧИТЬ КЛАСС И СДЕЛАТЬ ЕГО БОЛЕЕ ВАРИАТИВНЫМ
-class AttackedSquares:
-    def __init__(self, colors):
-        self.__under_attack = {color: set() for color in colors}
-
-    def update(self, figure: Figure):
-        figure_color = figure.color
-        for color in self.__under_attack:
-            if color != figure_color:
-                self.__under_attack[color].update(figure.valid_moves.get())
-
-    def clear(self):
-        for color in self.__under_attack:
-            self.__under_attack[color].clear()
-
-    def get_attacked_squares(self, color: str | Figure):
-        if isinstance(color, Figure):
-            color = color.color
-        return self.__under_attack.get(color)
-
-    def under_attack(self):
-        pass
-#     добавить метод для in
 
 
 class OldBoard:
@@ -96,28 +73,6 @@ class OldBoard:
 
     # для ракировки сдлетаь функцию которая на вход будет принимать любое количество пар фигур и координат и размешать их по ним
     # и сделать отдельную функцию для размещения и удаления фигуры
-
-
-# вынести в отдельный файл и довести до ума
-class PriorityList:
-    def __init__(self):
-        self.__data = dict()
-
-    def set(self, priority, obj):
-        self.__data[priority] = obj
-        self._sort()
-
-    def _sort(self):
-        self.__data = {key: self.__data[key] for key in sorted(self.__data)}
-
-    def __iter__(self):
-        return iter(tuple(val for val in self.__data.values()))
-
-    def __call__(self, priority):
-        def wrapper(func):
-            self.set(priority, func)
-            return func
-        return wrapper
 
 
 class MoveMixin:
