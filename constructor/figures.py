@@ -9,7 +9,7 @@ COORD_PATTERN = ['file', 'rank']
 FILE_SIZE = 8
 RANK_SIZE = 8
 # ========
-# переписать своим классом или просто расширить этот что бы были доступны орефметические операции которые будут возвращать новый обект коорд
+# переписать своим классом или просто расширить этот что бы были доступны арифметические операции которые будут возвращать новый обект коорд
 Coord = namedtuple('Coord', COORD_PATTERN)
 
 
@@ -37,6 +37,8 @@ class MovesSet:
 
 class Figure(ABC):
     def __init__(self, color: str, position: Coord):
+        # дать возможность расширять количество входнхы аргументов
+        # это я к тому что нужно не забыть переписать супер метод в инитах дочерних классов и в этом тоже
         self.color = color
         self.current_position = position
         self.special_move = True
@@ -47,9 +49,11 @@ class Figure(ABC):
 
     @abstractmethod
     def __str__(self):
+        # сейчас не имеет смысла
+        # либо убрать либо заменить на функцию что будет возвращать отображения
         pass
 
-# УБРАТЬ СЕТЕРРЫ И ЗАМЕНИТЬ ФУНКЦИЕЙ
+    # УБРАТЬ СЕТЕРРЫ И ЗАМЕНИТЬ ФУНКЦИЕЙ
     @property
     def position(self):
         return self.current_position
@@ -57,6 +61,7 @@ class Figure(ABC):
     @position.setter
     def position(self, new_position: Coord):
         if new_position in self.valid_moves.get_valid():
+            # пркодывать ошибку если False
             self.special_move = False
             self.current_position = new_position
 
@@ -65,12 +70,19 @@ class Figure(ABC):
         """should use valid_move_add"""
         pass
 
-# СДЕЛАТЬ ЧЕРЕЗ ХЕНДЛЕР ВСЕХ ФУНКЦИЙ КОТОРЫЕ НУЖНЫ ПЕРЕД МУВ МЕХАНИК
+    # СДЕЛАТЬ ЧЕРЕЗ ХЕНДЛЕР ВСЕХ ФУНКЦИЙ КОТОРЫЕ НУЖНЫ ПЕРЕД move_mechanic
+    # на подобие того как сделано в боорд
+    # хотя тут сложнее там по факту один очень большой класс просто разбит на под классы через миксины
+    # а тут каждый класс это отдельный новый класс и хендлер будет не правильно работать цепляя
+    # функции в родительский класс, а не в свой
     def moves_calculated(self, board, *args, **kwargs):
         self.valid_moves.clear()
         self.move_mechanic(board, *args, **kwargs)
 
     # вынести в боорд
+    # и сохранять пармаетры доски из конфига в отдельную переменную
+    # что бы в случаи чего они могли динамически изменяться локально
+    # а не глобально
     @staticmethod
     def position_check(position: Coord):
         return all(
@@ -78,6 +90,10 @@ class Figure(ABC):
             for atr in COORD_PATTERN
         )
 
+    # это все функции нужные для valid_move_add
+    # в них отельно вынисено то что там должно происходить при ввительнии if
+    # !дать нормальные именна
+    # и возможно по примеру борды вынести в отедльный миксин что бы удобнее всё это разграничивать
     def temp_valid_if_normal(self, board, position):
         self.valid_moves.blank.add(position) # а тут использовать бланк
 
@@ -93,6 +109,9 @@ class Figure(ABC):
 
     # ПЕРЕПИСАТЬ!
     def valid_move_add(self, board, position: Coord) -> bool | None:
+        # переписать как то скомпоновав логику
+        # как то убрать прямую зависмиость от метода board.check_validation (KingMixin)
+        # или скорее как то опускать её если нет королей (этот подход звучт будто бы правильннее)
         """
         :param position:
         :return:
@@ -115,67 +134,6 @@ class Figure(ABC):
             return True
         return None
 
-        # if not self.position_check(position):
-        #     return None
-        # if board.check_validation(self, position):
-        #     if position in board.figures_data:
-        #         if self.color != board.figures_data.get(position).color:
-        #             self.valid_moves.normal.add(position)
-        #             self.valid_moves.capturing.add(position)
-        #         else:
-        #             self.valid_moves.protected.add(position)
-        #         return False
-        #     elif self.position_check(position):
-        #         self.valid_moves.normal.add(position)
-        #         return True
-        # return True #but pos dont add
-
-        # if position in board.figures_data:
-        #     if self.color != board.figures_data.get(position).color:
-        #         self.valid_moves.normal.add(position)
-        #         self.valid_moves.capturing.add(position)
-        #     else:
-        #         self.valid_moves.protected.add(position)
-        #     return False
-        # elif self.position_check(position):
-        #     self.valid_moves.normal.add(position)
-        #     return True
-        # return None
-
-# ===================================classic================================
-#     def linear_movement(self, file, rank):
-#         for modifier in (-1, 1):
-#             for coord in range(1, FILE_SIZE):
-#                 file_coord = file + coord * modifier
-#                 if not self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank)):
-#                     break
-#             for coord in range(1, RANK_SIZE):
-#                 rank_coord = rank + coord * modifier
-#                 if not self.potential_position_add(self.temp_func_for_old_coord_format_set(file, rank_coord)):
-#                     break
-#
-#     def diagonal_movement(self, file, rank):
-#         for modifier_1 in (-1, 1):
-#             for modifier_2 in (-1, 1):
-#                 for coord in range(1, 8):
-#                     file_coord = file + coord * modifier_1
-#                     rank_coord = rank + coord * modifier_2
-#                     if not self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank_coord)):
-#                         break
-#
-#     def one_square_movement(self, file, rank):
-#         for modifier_1 in (-1, 1):
-#             for modifier_2 in (-1, 1):
-#                 file_coord = file + modifier_1
-#                 rank_coord = rank + modifier_2
-#                 self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank_coord))
-#         for coord in (-1, 1):
-#             file_coord = file + coord
-#             self.potential_position_add(self.temp_func_for_old_coord_format_set(file_coord, rank))
-#             rank_coord = rank + coord
-#             self.potential_position_add(self.temp_func_for_old_coord_format_set(file, rank_coord))
-# ==========================================================================
-
 
 class AbstractKing(Figure, ABC):
     def temp_func_for_minus_attacked_fields(self, board):
@@ -189,6 +147,7 @@ class EnPassantCapturingFigure(Figure, ABC):
 
     @abstractmethod
     def back_trail(self):
+        # по сути пройденый фигурой путь
         """should return a coords that can be attacked en passant move"""
         pass
 

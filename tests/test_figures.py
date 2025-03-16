@@ -120,6 +120,7 @@ def test_MoveNotEqualAttack_figure(coord, blank, attack, board_data, capturing):
     assert w_pawn.valid_moves.capturing == capturing
 
 def test_castling(board_data_castling):
+    """проверяет наличие позиций для рокировки но не делат рокировки"""
     w_king = CastlingKing(WHITE, figures.Coord(1, 5))
 
     for figure in board_data_castling.figures_data.values():

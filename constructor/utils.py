@@ -3,7 +3,7 @@ from constructor.figures import Figure
 
 # ОБЕЗЛИЧИТЬ КЛАСС И СДЕЛАТЬ ЕГО БОЛЕЕ ВАРИАТИВНЫМ
 class AttackedSquares:
-    """структура которая хранит цвет:клетки которые несут опасность для этого цвета"""
+    """структура которая хранит цвет:[клетки] которые несут опасность для этого цвета"""
     def __init__(self, colors):
         self.__under_attack = {color: set() for color in colors}
 
@@ -18,6 +18,7 @@ class AttackedSquares:
             self.__under_attack[color].clear()
 
     def get_attacked_squares(self, color: str | Figure):
+        """получить список опасных клеток для цвета"""
         if isinstance(color, Figure):
             color = color.color
         return self.__under_attack.get(color)
@@ -27,7 +28,7 @@ class AttackedSquares:
 #     добавить метод для in
 
 
-# вынести в отдельный файл и довести до ума
+# разбить на несколько абстракций(наверное, нужно в целом обдумать этот класс) и довести до ума
 class PriorityList:
     """Класс который сохраняет обекты в порядке их заданного прироитета
     можно использовать как декоратор для функций указав их приоритет

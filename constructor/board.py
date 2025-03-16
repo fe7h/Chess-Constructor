@@ -15,18 +15,27 @@ PAWN_TRANSFORM_AREA = {'white':{Coord(8, i) for i in range(9)},
 
 
 class OldBoard:
-    # должен включать:
-    # данные о разположении фигур (лучше сделать через двойной дикт)
-    # метод для смены позиции (make_a_move перенести в MoveMixin и он от туда будет вызвать метод удаления фигуры и метод смены позиции)
-    # метод для сменые сразу нескольких позиций
-    # метод удаления фигуры
-    # метод добавления фигур
-    # обработчик конца хода
-    # обработчик начала хода
-    # метод для расположения фигур в начале партии
-    # скорее всего так же должен дублировать с конфига размеры доски и валидировать по ним, а не в методе фигур
     def __init__(self):
         self.figures_data: Dict[Coord, Figure] = {}
+
+    def add(self):
+        pass
+
+    def remove(self):
+        # как вариант можно хранить сеты с обектмаи определеного класса фигур
+        # создавая эти сеты через соотвецтвеные миксины и удалять эти обекты
+        # в цикле из всех сетов при вызове этого метода
+        # ну тогда подобный метод нужно и для адд релизовать,
+        # в таком случаии оба эти метода нужно релизововать подобно all_moves_calculated,
+        # только с подобием приритилиста только без приоритета
+        pass
+
+    def change(self):
+        pass
+
+    def multi_change(self):
+        ...
+        self.change()
 
     # @abstractmethod
     def figures_arrangement(self):
@@ -50,7 +59,11 @@ class OldBoard:
         self.all_moves_calculated()
 
     # переписать всю функцию в более явном виде
+    # и вынести её в миксин
     def make_a_move(self, old_position: Coord, new_position: Coord):
+        # должен вызывать метод у фигуры который будет проверять
+        # возможность хода и кидать ошибку если нельзя походить
+        # и эта вот штука должна возрашать статус коды
         if old_position in self.figures_data:
             figure = self.figures_data[old_position]
             figure.position = new_position
@@ -65,7 +78,8 @@ class OldBoard:
         return Response(StatusCode.WRONG_MOVE)
 
     def end_of_turn(self):
-        """must return status codes"""
+        # !must return status codes
+        # релизовать тоже через приорит лист
         # self.pawn_transform()
         # self.get_en_passant_area()
         self.all_moves_calculated()
@@ -108,6 +122,7 @@ class KingMixin:
         super().__init__()
 
     def check_validation(self, figure: Figure, position: Coord):
+        # фигуры зависимы от этого метода
         """проверяет не будет ли шаха королю если передвинуть свою фигуру
         Копирует доску и совершает на ней ход если всё норм то вносит его в
         список доступных ходов
@@ -151,6 +166,9 @@ class EnPassantMixin:
         super().__init__()
 
     def temp_get_en_passant_area(self):
+        # от части temp_en_passant_file работает как AttackedSquares
+        # вынести AttackedSquares в более абстрактную реализацию
+        # и сделать отдельно наследника от абтрактного класса под этот мексин
         self.temp_en_passant_file = {'black':dict(),'white':dict()}
         for figure in self.figures_data.values():
             if isinstance(figure, EnPassantCapturingFigure):
@@ -162,6 +180,15 @@ class EnPassantMixin:
 #     pass
 
 class TransformMixin:
+    # как то не клеиться методы для трансформации и для пешки вмести
+    # надо как то разграничить
+    # вообше методы для преврашения пешки как то криво релизованны
+    # надо всю эту концепцию именно в рамках игры обдумать ещё раз
+    # то пока среди всех методов и абстракций этот именно в лоб работает
+    # возможно подобно кингмиксину надо сделать отдельную подкатигорию
+    # либо вообше абстрактный класс для миксинов про конкретные фигуры
+    # либо просто трансформацию вынести в абстрактный класс(правило) в фигурах
+    # как с рокировкой, миксин для которой лишь вызывает метод у всех обектов класса
     def __init__(self):
         self.temp_pawn_transform_area = PAWN_TRANSFORM_AREA
         super().__init__()
@@ -182,7 +209,10 @@ class TransformMixin:
 
 
 class CastlingMixin:
+    # добавить make_a_castling
     def all_castling_calculated(self):
+        # отправить через декоратор в all_moves_calculated
+        # (нужно будет переписать тесты)
         for figure in self.figures_data.values():
             if isinstance(figure, Castling):
                 figure.castlings_calculated(self)
